@@ -1,0 +1,87 @@
+.welcome {
+  max-width:
+    720px;
+
+  margin-bottom:
+    36px;
+}
+
+.eyebrow {
+  font-size:
+    12px;
+
+  font-weight:
+    700;
+
+  letter-spacing:
+    0.08em;
+
+  color:
+    #64748b;
+}
+
+h1 {
+  font-size:
+    36px;
+
+  margin:
+    8px 0 12px;
+}
+
+p {
+  color:
+    #64748b;
+
+  line-height:
+    1.7;
+
+  font-size:
+    16px;
+}
+
+.cards {
+  display:
+    grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap:
+    16px;
+}
+
+article {
+  padding:
+    22px;
+
+  background:
+    white;
+
+  border:
+    1px solid #e5e7eb;
+
+  border-radius:
+    12px;
+}
+
+article span {
+  display:
+    block;
+
+  color:
+    #64748b;
+
+  font-size:
+    13px;
+
+  margin-bottom:
+    10px;
+}
+
+article strong {
+  font-size:
+    16px;
+}

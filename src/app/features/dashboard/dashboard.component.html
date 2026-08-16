@@ -1,0 +1,83 @@
+<section class="dashboard">
+
+    <div class="welcome">
+
+        <span class="eyebrow">
+            AI ENGINEERING ASSISTANT
+        </span>
+
+        <h1>
+            Welcome to GitArchitect
+        </h1>
+
+        <p>
+            Understand repositories, review pull
+            requests, investigate issues and debug
+            CI failures using AI + GitHub MCP.
+        </p>
+
+    </div>
+
+
+    <div class="cards">
+
+        <article>
+
+            <span>
+                Session
+            </span>
+
+            <strong>
+                @if (
+                session.sessionId()
+                ) {
+                Active
+                } @else {
+                Not connected
+                }
+            </strong>
+
+        </article>
+
+
+        <article>
+
+            <span>
+                Repository
+            </span>
+
+            <strong>
+
+                @if (
+                session.repository();
+                as repository
+                ) {
+
+                {{ repository.fullName }}
+
+                } @else {
+
+                No repository selected
+
+                }
+
+            </strong>
+
+        </article>
+
+
+        <article>
+
+            <span>
+                GitHub Mode
+            </span>
+
+            <strong>
+                Human-approved writes
+            </strong>
+
+        </article>
+
+    </div>
+
+</section>

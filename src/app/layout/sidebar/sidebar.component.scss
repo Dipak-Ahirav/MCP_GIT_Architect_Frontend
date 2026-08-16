@@ -1,0 +1,26 @@
+.sidebar {
+  background: #101828;
+  color: #ffffff;
+  min-height: calc(100vh - 64px);
+  padding: 16px;
+  width: 260px;
+}
+
+nav {
+  display: grid;
+  gap: 6px;
+}
+
+a {
+  border-radius: 6px;
+  color: #d0d5dd;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+a.active,
+a:hover {
+  background: #24324a;
+  color: #ffffff;
+}
+

@@ -1,11 +1,48 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+} from '@angular/core';
 
-import { routes } from './app.routes';
+import {
+  provideRouter,
+} from '@angular/router';
 
-export const appConfig: ApplicationConfig = {
+import {
+  provideHttpClient,
+} from '@angular/common/http';
+
+import {
+  routes,
+} from './app.routes';
+
+import {
+  SessionInitializerService,
+} from './core/state/session-initializer.service';
+
+
+export const appConfig:
+  ApplicationConfig = {
+
   providers: [
-    provideBrowserGlobalErrorListeners(),
-    provideRouter(routes)
-  ]
+
+    provideRouter(
+      routes,
+    ),
+
+    provideHttpClient(),
+
+    provideAppInitializer(
+      () => {
+
+        const initializer =
+          inject(
+            SessionInitializerService,
+          );
+
+        return initializer
+          .initialize();
+      },
+    ),
+  ],
 };
