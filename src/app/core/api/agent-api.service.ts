@@ -174,15 +174,28 @@ export class AgentApiService {
 
     return this.http
       .post<
-        ApiResponse<PullRequestReview>
+        ApiResponse<{
+          repository: string;
+          pullNumber: number;
+          overallScore: number;
+          review: PullRequestReview;
+        }>
       >(
         `${this.baseUrl}/sessions/${sessionId}/pull-requests/${pullNumber}/review`,
         {},
       )
       .pipe(
         map(
-          response =>
-            response.data,
+          response => ({
+            ...response.data.review,
+
+            scores: {
+              ...response.data.review.scores,
+
+              overall:
+                response.data.overallScore,
+            },
+          }),
         ),
       );
   }

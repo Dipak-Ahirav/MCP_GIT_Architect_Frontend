@@ -32,6 +32,10 @@ export interface AnalysisFinding {
   evidencePaths?: string[];
 
   recommendation?: string;
+
+  whyItMatters?: string;
+
+  suggestion?: string;
 }
 
 export interface RepositoryDiscovery {
@@ -111,11 +115,31 @@ export interface RepositoryIntelligenceResponse {
 }
 
 export interface PullRequestReview {
+  pullRequest?: {
+    number?: number;
+
+    title?: string;
+
+    author?: string;
+
+    status?: string;
+
+    baseBranch?: string;
+
+    headBranch?: string;
+
+    changedFiles?: number;
+
+    additions?: number;
+
+    deletions?: number;
+  };
+
   summary?: string;
 
-  risk?: string;
+  riskLevel?: string;
 
-  recommendation?: string;
+  reviewRecommendation?: string;
 
   scores?: ScoreMap;
 
@@ -123,7 +147,17 @@ export interface PullRequestReview {
 
   positives?: string[];
 
-  checks?: string[];
+  testingAssessment?: {
+    confidence?: string;
+
+    notes?: string[];
+  };
+
+  checks?: {
+    status?: string;
+
+    notes?: string[];
+  };
 
   filesReviewed?: string[];
 
