@@ -131,37 +131,99 @@ export interface PullRequestReview {
 }
 
 export interface IssueAnalysis {
+  issue?: {
+    number?: number;
+
+    title?: string;
+
+    author?: string;
+
+    state?: string;
+
+    labels?: string[];
+  };
+
   summary?: string;
 
   issueType?: string;
 
+  problemStatement?: string;
+
+  implementationReadiness?: string;
+
   confidence?: number | string;
 
-  explicitRequirements?: string[];
+  requirements?: {
+    explicit?: string[];
 
-  inferredRequirements?: string[];
+    inferred?: string[];
 
-  missingRequirements?: string[];
+    missing?: string[];
+  };
 
   acceptanceCriteria?: string[];
 
-  affectedAreas?: string[];
+  affectedAreas?: {
+    area?: string;
 
-  rootCauseHypothesis?: string;
+    reason?: string;
 
-  evidencePaths?: string[];
+    evidencePaths?: string[];
+  }[];
 
-  relatedFiles?: string[];
+  rootCauseAnalysis?: {
+    applicable?: boolean;
 
-  implementationPlan?: string[];
+    hypothesis?: string;
 
-  testingPlan?: string[];
+    confidence?: string;
 
-  risks?: string[];
+    evidencePaths?: string[];
+  };
+
+  relatedFiles?: {
+    path?: string;
+
+    relevance?: string;
+
+    likelyChange?: boolean;
+  }[];
+
+  implementationPlan?: {
+    order?: number;
+
+    title?: string;
+
+    description?: string;
+
+    files?: string[];
+
+    validation?: string;
+  }[];
+
+  testingPlan?: {
+    type?: string;
+
+    scenario?: string;
+
+    expectedResult?: string;
+  }[];
+
+  risks?: {
+    level?: string;
+
+    risk?: string;
+
+    mitigation?: string;
+  }[];
 
   questions?: string[];
 
-  relatedPRs?: string[];
+  relatedPullRequests?: {
+    number?: number;
+
+    relationship?: string;
+  }[];
 
   filesInspected?: string[];
 

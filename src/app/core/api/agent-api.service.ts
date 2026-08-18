@@ -195,7 +195,11 @@ export class AgentApiService {
 
     return this.http
       .post<
-        ApiResponse<IssueAnalysis>
+        ApiResponse<{
+          repository: string;
+          issueNumber: number;
+          analysis: IssueAnalysis;
+        }>
       >(
         `${this.baseUrl}/sessions/${sessionId}/issues/${issueNumber}/analyze`,
         {},
@@ -203,7 +207,7 @@ export class AgentApiService {
       .pipe(
         map(
           response =>
-            response.data,
+            response.data.analysis,
         ),
       );
   }

@@ -10,6 +10,7 @@ import {
 
 import {
   JsonPipe,
+  TitleCasePipe,
 } from '@angular/common';
 
 import {
@@ -36,6 +37,7 @@ import {
   imports: [
     FormsModule,
     JsonPipe,
+    TitleCasePipe,
   ],
 
   template: `
@@ -106,13 +108,54 @@ import {
         <div class="stat-card">
 
           <span class="stat-label">
+            Issue
+          </span>
+
+          <span class="stat-value">
+            {{
+              data.issue?.number
+                ? '#' + data.issue?.number
+                : '#' + issueNumber
+            }}
+          </span>
+
+          @if (data.issue?.state) {
+
+            <span class="badge">
+              {{ data.issue?.state }}
+            </span>
+
+          }
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <span class="stat-label">
             Type
           </span>
 
           <span class="stat-value">
             {{
               data.issueType ??
-              'Issue'
+              'unknown'
+            }}
+          </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <span class="stat-label">
+            Readiness
+          </span>
+
+          <span class="stat-value">
+            {{
+              data.implementationReadiness ??
+              '-'
             }}
           </span>
 
@@ -137,6 +180,51 @@ import {
       </div>
 
 
+      @if (
+        data.issue?.title ||
+        data.issue?.author ||
+        data.issue?.labels?.length
+      ) {
+
+        <div class="panel">
+
+          @if (data.issue?.title) {
+
+            <h2>
+              {{ data.issue?.title }}
+            </h2>
+
+          }
+
+          <div class="meta-row">
+
+            @if (data.issue?.author) {
+
+              <span class="badge">
+                {{ data.issue?.author }}
+              </span>
+
+            }
+
+            @for (
+              label
+              of data.issue?.labels ?? [];
+              track label
+            ) {
+
+              <span class="badge">
+                {{ label }}
+              </span>
+
+            }
+
+          </div>
+
+        </div>
+
+      }
+
+
       @if (data.summary) {
 
         <div class="panel">
@@ -154,8 +242,26 @@ import {
       }
 
 
+      @if (data.problemStatement) {
+
+        <div class="panel">
+
+          <h2>
+            Problem Statement
+          </h2>
+
+          <p>
+            {{ data.problemStatement }}
+          </p>
+
+        </div>
+
+      }
+
+
       @if (
-        data.rootCauseHypothesis
+        data.rootCauseAnalysis?.applicable ||
+        data.rootCauseAnalysis?.hypothesis
       ) {
 
         <div class="panel">
@@ -166,9 +272,33 @@ import {
 
           <p>
             {{
-              data.rootCauseHypothesis
+              data.rootCauseAnalysis?.hypothesis ||
+              'No root cause hypothesis provided.'
             }}
           </p>
+
+          <div class="meta-row">
+
+            <span class="badge">
+              {{
+                data.rootCauseAnalysis?.confidence ??
+                'unknown'
+              }}
+            </span>
+
+            @for (
+              path
+              of data.rootCauseAnalysis?.evidencePaths ?? [];
+              track path
+            ) {
+
+              <span class="badge">
+                {{ path }}
+              </span>
+
+            }
+
+          </div>
 
         </div>
 
@@ -187,7 +317,38 @@ import {
 
             @for (
               item
-              of data.explicitRequirements ?? [];
+              of data.requirements?.explicit ?? [];
+              track item
+            ) {
+
+              <li>
+                {{ item }}
+              </li>
+
+            } @empty {
+
+              <li>
+                None identified.
+              </li>
+
+            }
+
+          </ul>
+
+        </div>
+
+
+        <div class="panel">
+
+          <h2>
+            Inferred Requirements
+          </h2>
+
+          <ul>
+
+            @for (
+              item
+              of data.requirements?.inferred ?? [];
               track item
             ) {
 
@@ -218,7 +379,7 @@ import {
 
             @for (
               item
-              of data.missingRequirements ?? [];
+              of data.requirements?.missing ?? [];
               track item
             ) {
 
@@ -261,9 +422,65 @@ import {
 
           }
 
+          @empty {
+
+            <li>
+              None reported.
+            </li>
+
+          }
+
         </ul>
 
       </div>
+
+
+      @if (data.affectedAreas?.length) {
+
+        <div class="panel">
+
+          <h2>
+            Affected Areas
+          </h2>
+
+          <div class="card-list">
+
+            @for (
+              area
+              of data.affectedAreas ?? [];
+              track $index
+            ) {
+
+              <div class="detail-card">
+
+                <h3>
+                  {{ area.area ?? 'Area' }}
+                </h3>
+
+                <p>
+                  {{ area.reason }}
+                </p>
+
+                @if (area.evidencePaths?.length) {
+
+                  <small>
+                    Evidence:
+                    {{
+                      area.evidencePaths?.join(', ')
+                    }}
+                  </small>
+
+                }
+
+              </div>
+
+            }
+
+          </div>
+
+        </div>
+
+      }
 
 
       <div class="panel">
@@ -275,13 +492,46 @@ import {
         <ol>
 
           @for (
-            item
+            step
             of data.implementationPlan ?? [];
-            track item
+            track step.order ?? $index
           ) {
 
             <li>
-              {{ item }}
+              <strong>
+                {{
+                  step.title ??
+                  'Step'
+                }}
+              </strong>
+
+              <p>
+                {{ step.description }}
+              </p>
+
+              @if (step.files?.length) {
+
+                <small>
+                  Files:
+                  {{ step.files?.join(', ') }}
+                </small>
+
+              }
+
+              @if (step.validation) {
+
+                <small>
+                  Validation:
+                  {{ step.validation }}
+                </small>
+
+              }
+            </li>
+
+          } @empty {
+
+            <li>
+              No implementation steps reported.
             </li>
 
           }
@@ -300,18 +550,281 @@ import {
         <ul>
 
           @for (
-            item
+            test
             of data.testingPlan ?? [];
-            track item
+            track $index
           ) {
 
             <li>
-              {{ item }}
+              <strong>
+                {{
+                  test.type ??
+                  'test'
+                    | titlecase
+                }}
+              </strong>
+
+              <p>
+                {{ test.scenario }}
+              </p>
+
+              @if (test.expectedResult) {
+
+                <small>
+                  Expected:
+                  {{ test.expectedResult }}
+                </small>
+
+              }
+            </li>
+
+          } @empty {
+
+            <li>
+              No testing steps reported.
             </li>
 
           }
 
         </ul>
+
+      </div>
+
+
+      <div class="grid">
+
+        <div class="panel">
+
+          <h2>
+            Risks
+          </h2>
+
+          <div class="card-list">
+
+            @for (
+              risk
+              of data.risks ?? [];
+              track $index
+            ) {
+
+              <div class="detail-card">
+
+                <span class="badge">
+                  {{ risk.level ?? 'risk' }}
+                </span>
+
+                <h3>
+                  {{ risk.risk }}
+                </h3>
+
+                @if (risk.mitigation) {
+
+                  <p>
+                    {{ risk.mitigation }}
+                  </p>
+
+                }
+
+              </div>
+
+            } @empty {
+
+              <p>
+                No risks reported.
+              </p>
+
+            }
+
+          </div>
+
+        </div>
+
+
+        <div class="panel">
+
+          <h2>
+            Questions
+          </h2>
+
+          <ul>
+
+            @for (
+              question
+              of data.questions ?? [];
+              track question
+            ) {
+
+              <li>
+                {{ question }}
+              </li>
+
+            } @empty {
+
+              <li>
+                No open questions.
+              </li>
+
+            }
+
+          </ul>
+
+        </div>
+
+      </div>
+
+
+      <div class="grid">
+
+        <div class="panel">
+
+          <h2>
+            Related Files
+          </h2>
+
+          <div class="card-list">
+
+            @for (
+              file
+              of data.relatedFiles ?? [];
+              track file.path ?? $index
+            ) {
+
+              <div class="detail-card">
+
+                <h3>
+                  {{ file.path }}
+                </h3>
+
+                <p>
+                  {{ file.relevance }}
+                </p>
+
+                <span class="badge">
+                  {{
+                    file.likelyChange
+                      ? 'likely change'
+                      : 'reference'
+                  }}
+                </span>
+
+              </div>
+
+            } @empty {
+
+              <p>
+                No related files reported.
+              </p>
+
+            }
+
+          </div>
+
+        </div>
+
+
+        <div class="panel">
+
+          <h2>
+            Related Pull Requests
+          </h2>
+
+          <div class="card-list">
+
+            @for (
+              pr
+              of data.relatedPullRequests ?? [];
+              track pr.number ?? $index
+            ) {
+
+              <div class="detail-card">
+
+                <h3>
+                  #{{ pr.number }}
+                </h3>
+
+                <p>
+                  {{ pr.relationship }}
+                </p>
+
+              </div>
+
+            } @empty {
+
+              <p>
+                No related pull requests reported.
+              </p>
+
+            }
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="grid">
+
+        <div class="panel">
+
+          <h2>
+            Files Inspected
+          </h2>
+
+          <ul>
+
+            @for (
+              file
+              of data.filesInspected ?? [];
+              track file
+            ) {
+
+              <li>
+                {{ file }}
+              </li>
+
+            } @empty {
+
+              <li>
+                No files inspected.
+              </li>
+
+            }
+
+          </ul>
+
+        </div>
+
+
+        <div class="panel">
+
+          <h2>
+            Limitations
+          </h2>
+
+          <ul>
+
+            @for (
+              limitation
+              of data.limitations ?? [];
+              track limitation
+            ) {
+
+              <li>
+                {{ limitation }}
+              </li>
+
+            } @empty {
+
+              <li>
+                None reported.
+              </li>
+
+            }
+
+          </ul>
+
+        </div>
 
       </div>
 
@@ -330,10 +843,70 @@ import {
   `,
 
   styles: [`
+    .meta-row {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+    }
+
+    .card-list {
+      display: grid;
+
+      gap: 12px;
+    }
+
+    .detail-card {
+      border:
+        1px solid #e2e8f0;
+
+      border-radius: 8px;
+
+      background: #f8fafc;
+
+      padding: 14px;
+    }
+
+    .detail-card h3 {
+      margin:
+        8px 0 6px;
+
+      font-size: 15px;
+
+      overflow-wrap: anywhere;
+    }
+
+    .detail-card p,
+    li p {
+      margin:
+        6px 0;
+
+      color: #334155;
+    }
+
+    small {
+      display: block;
+
+      color: #64748b;
+
+      line-height: 1.5;
+
+      overflow-wrap: anywhere;
+    }
+
     li {
       margin-bottom: 8px;
 
       line-height: 1.55;
+    }
+
+    .stat-card {
+      display: grid;
+
+      align-content: start;
+
+      gap: 8px;
     }
   `],
 })
@@ -386,6 +959,8 @@ export class IssueAnalysisComponent {
     this.loading.set(true);
 
     this.error.set(null);
+
+    this.report.set(null);
 
 
     this.api
