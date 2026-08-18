@@ -416,6 +416,14 @@ export class GithubWritesComponent {
       return;
     }
 
+    if (!pending.approvalId) {
+      this.error.set(
+        'Approval id is missing. Prepare the GitHub action again.',
+      );
+
+      return;
+    }
+
 
     this.resolving.set(true);
 

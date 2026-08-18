@@ -269,8 +269,31 @@ export class AgentApiService {
       )
       .pipe(
         map(
-          response =>
-            response.data,
+          response => {
+            const data =
+              response.data;
+
+            if (
+              data.status !==
+              'approval_required'
+            ) {
+              return data;
+            }
+
+            const raw =
+              data as GitHubApprovalRequired & {
+                _id?: string;
+              };
+
+            return {
+              ...raw,
+
+              approvalId:
+                raw.approvalId ??
+                raw._id ??
+                '',
+            };
+          },
         ),
       );
   }
