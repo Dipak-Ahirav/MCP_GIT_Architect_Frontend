@@ -93,7 +93,7 @@ export class GithubApiService {
       .get<
         ApiResponse<any>
       >(
-        `${this.baseUrl}/repositories`,
+        `${this.baseUrl}/repos`,
       )
       .pipe(
         map(
