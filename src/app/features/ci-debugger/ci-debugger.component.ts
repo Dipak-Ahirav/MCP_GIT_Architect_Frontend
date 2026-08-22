@@ -106,6 +106,39 @@ import {
         <div class="stat-card">
 
           <span class="stat-label">
+            Workflow
+          </span>
+
+          <span class="stat-value">
+            {{
+              data.workflowRun?.workflowName ??
+              'Unknown'
+            }}
+          </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <span class="stat-label">
+            Conclusion
+          </span>
+
+          <span class="stat-value">
+            {{
+              data.workflowRun?.conclusion ??
+              data.workflowRun?.status ??
+              '-'
+            }}
+          </span>
+
+        </div>
+
+
+        <div class="stat-card">
+
+          <span class="stat-label">
             Failure Category
           </span>
 
@@ -127,6 +160,7 @@ import {
 
           <span class="stat-value">
             {{
+              rootCauseConfidence(data) ??
               data.confidence ??
               '-'
             }}
@@ -162,9 +196,41 @@ import {
             Root Cause
           </h2>
 
+          @if (rootCauseTitle(data)) {
+
+            <h3>
+              {{ rootCauseTitle(data) }}
+            </h3>
+
+          }
+
           <p>
-            {{ data.rootCause }}
+            {{ rootCauseExplanation(data) }}
           </p>
+
+          @if (rootCauseEvidence(data).length) {
+
+            <h3>
+              Evidence
+            </h3>
+
+            <ul>
+
+              @for (
+                evidence
+                of rootCauseEvidence(data);
+                track evidence
+              ) {
+
+                <li>
+                  {{ evidence }}
+                </li>
+
+              }
+
+            </ul>
+
+          }
 
         </div>
 
@@ -184,8 +250,48 @@ import {
         ) {
 
           <div class="finding">
-            {{ job }}
+
+            <h3>
+              {{ failedJobName(job) }}
+            </h3>
+
+            <p>
+              {{ failedJobSummary(job) }}
+            </p>
+
+            @if (failedJobMeta(job).length) {
+
+              <div class="meta-row">
+
+                @for (
+                  item
+                  of failedJobMeta(job);
+                  track item
+                ) {
+
+                  <span class="badge">
+                    {{ item }}
+                  </span>
+
+                }
+
+              </div>
+
+            }
+
+            @if (failedJobLogs(job).length) {
+
+              <pre>{{ failedJobLogs(job).join('\n') }}</pre>
+
+            }
+
           </div>
+
+        } @empty {
+
+          <p class="muted">
+            No failed jobs reported.
+          </p>
 
         }
 
@@ -207,7 +313,37 @@ import {
           ) {
 
             <li>
-              {{ fix }}
+              <strong>
+                {{ fixTitle(fix) }}
+              </strong>
+
+              <p>
+                {{ fixDescription(fix) }}
+              </p>
+
+              @if (fixFiles(fix).length) {
+
+                <p class="muted">
+                  Files:
+                  {{ fixFiles(fix).join(', ') }}
+                </p>
+
+              }
+
+              @if (fixValidation(fix)) {
+
+                <p class="muted">
+                  Validation:
+                  {{ fixValidation(fix) }}
+                </p>
+
+              }
+            </li>
+
+          } @empty {
+
+            <li>
+              No proposed fixes reported.
             </li>
 
           }
@@ -242,6 +378,80 @@ import {
       }
 
 
+      @if (
+        data.relatedCode?.length
+      ) {
+
+        <div class="panel">
+
+          <h2>
+            Related Code
+          </h2>
+
+          @for (
+            item
+            of data.relatedCode ?? [];
+            track item
+          ) {
+
+            <div class="finding">
+
+              <h3>
+                {{ relatedCodePath(item) }}
+              </h3>
+
+              <p>
+                {{ relatedCodeRelevance(item) }}
+              </p>
+
+              @if (relatedCodeLikelyCause(item)) {
+
+                <span class="badge">
+                  likely cause
+                </span>
+
+              }
+
+            </div>
+
+          }
+
+        </div>
+
+      }
+
+
+      @if (
+        data.reproduction?.length
+      ) {
+
+        <div class="panel">
+
+          <h2>
+            Reproduction
+          </h2>
+
+          <ol>
+
+            @for (
+              step
+              of data.reproduction ?? [];
+              track step
+            ) {
+
+              <li>
+                {{ step }}
+              </li>
+
+            }
+
+          </ol>
+
+        </div>
+
+      }
+
+
       <div class="panel">
 
         <h2>
@@ -260,11 +470,131 @@ import {
               {{ step }}
             </li>
 
+          } @empty {
+
+            <li>
+              No validation plan reported.
+            </li>
+
           }
 
         </ul>
 
       </div>
+
+
+      @if (
+        data.environmentalFactors?.length ||
+        data.filesInspected?.length ||
+        data.logsInspected?.length ||
+        data.limitations?.length
+      ) {
+
+        <div class="panel">
+
+          <h2>
+            Evidence and Limitations
+          </h2>
+
+          @if (data.environmentalFactors?.length) {
+
+            <h3>
+              Environment
+            </h3>
+
+            <ul>
+
+              @for (
+                item
+                of data.environmentalFactors ?? [];
+                track item
+              ) {
+
+                <li>
+                  {{ item }}
+                </li>
+
+              }
+
+            </ul>
+
+          }
+
+          @if (data.filesInspected?.length) {
+
+            <h3>
+              Files Inspected
+            </h3>
+
+            <ul>
+
+              @for (
+                file
+                of data.filesInspected ?? [];
+                track file
+              ) {
+
+                <li>
+                  {{ file }}
+                </li>
+
+              }
+
+            </ul>
+
+          }
+
+          @if (data.logsInspected?.length) {
+
+            <h3>
+              Logs Inspected
+            </h3>
+
+            <ul>
+
+              @for (
+                log
+                of data.logsInspected ?? [];
+                track log
+              ) {
+
+                <li>
+                  {{ log }}
+                </li>
+
+              }
+
+            </ul>
+
+          }
+
+          @if (data.limitations?.length) {
+
+            <h3>
+              Limitations
+            </h3>
+
+            <ul>
+
+              @for (
+                limitation
+                of data.limitations ?? [];
+                track limitation
+              ) {
+
+                <li>
+                  {{ limitation }}
+                </li>
+
+              }
+
+            </ul>
+
+          }
+
+        </div>
+
+      }
 
 
       <details class="panel">
@@ -279,6 +609,75 @@ import {
 
     }
   `,
+
+  styles: [`
+    .finding {
+      margin-bottom: 12px;
+
+      padding: 14px;
+
+      border:
+        1px solid #e2e8f0;
+
+      border-radius: 10px;
+
+      background: #f8fafc;
+    }
+
+    .finding h3 {
+      margin:
+        0 0 7px;
+
+      font-size: 1rem;
+    }
+
+    .finding p {
+      margin:
+        0 0 8px;
+
+      line-height: 1.55;
+    }
+
+    .panel h3 {
+      margin:
+        14px 0 7px;
+
+      font-size: 1rem;
+    }
+
+    .panel p,
+    .panel li {
+      line-height: 1.55;
+    }
+
+    .meta-row {
+      display: flex;
+
+      flex-wrap: wrap;
+
+      gap: 8px;
+
+      margin-bottom: 10px;
+    }
+
+    .muted {
+      color: #64748b;
+    }
+
+    pre {
+      overflow: auto;
+
+      padding: 12px;
+
+      border-radius: 8px;
+
+      background: #0f172a;
+
+      color: #e2e8f0;
+
+      white-space: pre-wrap;
+    }
+  `],
 })
 export class CiDebuggerComponent {
 
@@ -362,5 +761,234 @@ export class CiDebuggerComponent {
             this.loading.set(false);
           },
       });
+  }
+
+
+  protected rootCauseTitle(
+    data: CiDebugAnalysis,
+  ): string {
+
+    if (
+      typeof data.rootCause ===
+      'string'
+    ) {
+      return '';
+    }
+
+    return data.rootCause?.title ?? '';
+  }
+
+
+  protected rootCauseExplanation(
+    data: CiDebugAnalysis,
+  ): string {
+
+    if (
+      typeof data.rootCause ===
+      'string'
+    ) {
+      return data.rootCause;
+    }
+
+    return data.rootCause?.explanation ?? '';
+  }
+
+
+  protected rootCauseConfidence(
+    data: CiDebugAnalysis,
+  ): string {
+
+    if (
+      typeof data.rootCause ===
+      'string'
+    ) {
+      return '';
+    }
+
+    return data.rootCause?.confidence ?? '';
+  }
+
+
+  protected rootCauseEvidence(
+    data: CiDebugAnalysis,
+  ): string[] {
+
+    if (
+      typeof data.rootCause ===
+      'string'
+    ) {
+      return [];
+    }
+
+    return data.rootCause?.evidence ?? [];
+  }
+
+
+  protected failedJobName(
+    job: NonNullable<CiDebugAnalysis['failedJobs']>[number],
+  ): string {
+
+    if (
+      typeof job ===
+      'string'
+    ) {
+      return job;
+    }
+
+    return job.name ?? 'Failed job';
+  }
+
+
+  protected failedJobSummary(
+    job: NonNullable<CiDebugAnalysis['failedJobs']>[number],
+  ): string {
+
+    if (
+      typeof job ===
+      'string'
+    ) {
+      return '';
+    }
+
+    return job.errorSummary ?? '';
+  }
+
+
+  protected failedJobMeta(
+    job: NonNullable<CiDebugAnalysis['failedJobs']>[number],
+  ): string[] {
+
+    if (
+      typeof job ===
+      'string'
+    ) {
+      return [];
+    }
+
+    return [
+      job.conclusion,
+      job.failedStep
+        ? `failed step: ${job.failedStep}`
+        : '',
+      job.jobId
+        ? `job ${job.jobId}`
+        : '',
+    ].filter(Boolean) as string[];
+  }
+
+
+  protected failedJobLogs(
+    job: NonNullable<CiDebugAnalysis['failedJobs']>[number],
+  ): string[] {
+
+    if (
+      typeof job ===
+      'string'
+    ) {
+      return [];
+    }
+
+    return job.relevantLogLines ?? [];
+  }
+
+
+  protected fixTitle(
+    fix: NonNullable<CiDebugAnalysis['proposedFixes']>[number],
+  ): string {
+
+    if (
+      typeof fix ===
+      'string'
+    ) {
+      return fix;
+    }
+
+    return fix.title ?? 'Proposed fix';
+  }
+
+
+  protected fixDescription(
+    fix: NonNullable<CiDebugAnalysis['proposedFixes']>[number],
+  ): string {
+
+    if (
+      typeof fix ===
+      'string'
+    ) {
+      return '';
+    }
+
+    return fix.description ?? '';
+  }
+
+
+  protected fixFiles(
+    fix: NonNullable<CiDebugAnalysis['proposedFixes']>[number],
+  ): string[] {
+
+    if (
+      typeof fix ===
+      'string'
+    ) {
+      return [];
+    }
+
+    return fix.files ?? [];
+  }
+
+
+  protected fixValidation(
+    fix: NonNullable<CiDebugAnalysis['proposedFixes']>[number],
+  ): string {
+
+    if (
+      typeof fix ===
+      'string'
+    ) {
+      return '';
+    }
+
+    return fix.validation ?? '';
+  }
+
+
+  protected relatedCodePath(
+    item: NonNullable<CiDebugAnalysis['relatedCode']>[number],
+  ): string {
+
+    if (
+      typeof item ===
+      'string'
+    ) {
+      return item;
+    }
+
+    return item.path ?? 'Related code';
+  }
+
+
+  protected relatedCodeRelevance(
+    item: NonNullable<CiDebugAnalysis['relatedCode']>[number],
+  ): string {
+
+    if (
+      typeof item ===
+      'string'
+    ) {
+      return '';
+    }
+
+    return item.relevance ?? '';
+  }
+
+
+  protected relatedCodeLikelyCause(
+    item: NonNullable<CiDebugAnalysis['relatedCode']>[number],
+  ): boolean {
+
+    return (
+      typeof item !== 'string' &&
+      item.likelyCause === true
+    );
   }
 }

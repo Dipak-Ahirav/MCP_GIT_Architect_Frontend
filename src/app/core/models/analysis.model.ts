@@ -265,21 +265,86 @@ export interface IssueAnalysis {
 }
 
 export interface CiDebugAnalysis {
+  workflowRun?: {
+    runId?: number;
+
+    workflowName?: string;
+
+    status?: string;
+
+    conclusion?: string;
+
+    branch?: string;
+
+    commitSha?: string;
+
+    event?: string;
+
+    runNumber?: number;
+  };
+
   summary?: string;
 
   failureCategory?: string;
 
   confidence?: number | string;
 
-  rootCause?: string;
+  rootCause?:
+    | string
+    | {
+      title?: string;
 
-  failedJobs?: string[];
+      explanation?: string;
+
+      confidence?: string;
+
+      evidence?: string[];
+    };
+
+  failedJobs?: (
+    | string
+    | {
+      jobId?: number;
+
+      name?: string;
+
+      conclusion?: string;
+
+      failedStep?: string;
+
+      errorSummary?: string;
+
+      relevantLogLines?: string[];
+    }
+  )[];
 
   relevantLogLines?: string[];
 
-  relatedCode?: string[];
+  relatedCode?: (
+    | string
+    | {
+      path?: string;
 
-  proposedFixes?: string[];
+      relevance?: string;
+
+      likelyCause?: boolean;
+    }
+  )[];
+
+  proposedFixes?: (
+    | string
+    | {
+      priority?: string;
+
+      title?: string;
+
+      description?: string;
+
+      files?: string[];
+
+      validation?: string;
+    }
+  )[];
 
   reproduction?: string[];
 

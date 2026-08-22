@@ -2,6 +2,7 @@ import {
   Component,
   inject,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 
 import {
@@ -104,9 +105,14 @@ interface ChatMessage {
               }}
             </strong>
 
-            <p>
-              {{ message.content }}
-            </p>
+            <div
+              class="message-content"
+              [innerHTML]="
+                formatMessage(
+                  message.content
+                )
+              ">
+            </div>
 
           </div>
 
@@ -232,13 +238,73 @@ interface ChatMessage {
       margin-bottom: 15px;
     }
 
-    .message p {
+    .message-content {
       margin:
         7px 0 0;
 
       line-height: 1.65;
 
-      white-space: pre-wrap;
+      white-space: normal;
+    }
+
+    .message-content :is(
+      h2,
+      h3
+    ) {
+      margin:
+        20px 0 8px;
+
+      color: #0f172a;
+    }
+
+    .message-content h2 {
+      font-size: 1.05rem;
+    }
+
+    .message-content h3 {
+      font-size: 1rem;
+    }
+
+    .message-content p {
+      margin:
+        0 0 10px;
+    }
+
+    .message-content ul {
+      margin:
+        6px 0 12px 20px;
+
+      padding: 0;
+    }
+
+    .message-content li {
+      margin-bottom: 5px;
+    }
+
+    .message-content code {
+      padding: 2px 5px;
+
+      border-radius: 5px;
+
+      background: #e2e8f0;
+
+      color: #0f172a;
+
+      font-family:
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Monaco,
+        Consolas,
+        'Liberation Mono',
+        'Courier New',
+        monospace;
+
+      font-size: 0.92em;
+    }
+
+    .message-content strong {
+      font-weight: 700;
     }
 
     .message.user {
@@ -290,6 +356,9 @@ interface ChatMessage {
       min-height: 74px;
     }
   `],
+
+  encapsulation:
+    ViewEncapsulation.None,
 })
 export class ChatComponent {
 
@@ -325,6 +394,195 @@ export class ChatComponent {
 
     this.input =
       prompt;
+  }
+
+
+  protected formatMessage(
+    content: string,
+  ): string {
+
+    const lines =
+      this.escapeHtml(
+        content,
+      )
+        .split(
+          /\r?\n/,
+        );
+
+    const html:
+      string[] =
+      [];
+
+    let paragraph:
+      string[] =
+      [];
+
+    let list:
+      string[] =
+      [];
+
+    const flushParagraph =
+      () => {
+
+        if (
+          paragraph.length
+        ) {
+
+          html.push(
+            `<p>${paragraph.join(
+              '<br>',
+            )}</p>`,
+          );
+
+          paragraph =
+            [];
+        }
+      };
+
+    const flushList =
+      () => {
+
+        if (
+          list.length
+        ) {
+
+          html.push(
+            `<ul>${list.join(
+              '',
+            )}</ul>`,
+          );
+
+          list =
+            [];
+        }
+      };
+
+
+    for (
+      const rawLine
+      of lines
+    ) {
+
+      const line =
+        rawLine.trim();
+
+      if (
+        !line
+      ) {
+
+        flushParagraph();
+        flushList();
+
+        continue;
+      }
+
+
+      const headingMatch =
+        /^(#{2,3})\s+(.+)$/.exec(
+          line,
+        );
+
+      if (
+        headingMatch
+      ) {
+
+        flushParagraph();
+        flushList();
+
+        const level =
+          headingMatch[1].length;
+
+        html.push(
+          `<h${level}>${this.formatInlineMarkdown(
+            headingMatch[2],
+          )}</h${level}>`,
+        );
+
+        continue;
+      }
+
+
+      const bulletMatch =
+        /^[-*]\s+(.+)$/.exec(
+          line,
+        );
+
+      if (
+        bulletMatch
+      ) {
+
+        flushParagraph();
+
+        list.push(
+          `<li>${this.formatInlineMarkdown(
+            bulletMatch[1],
+          )}</li>`,
+        );
+
+        continue;
+      }
+
+
+      flushList();
+
+      paragraph.push(
+        this.formatInlineMarkdown(
+          line,
+        ),
+      );
+    }
+
+
+    flushParagraph();
+    flushList();
+
+    return html.join(
+      '',
+    );
+  }
+
+
+  private formatInlineMarkdown(
+    value: string,
+  ): string {
+
+    return value
+      .replace(
+        /`([^`]+)`/g,
+        '<code>$1</code>',
+      )
+      .replace(
+        /\*\*([^*]+)\*\*/g,
+        '<strong>$1</strong>',
+      );
+  }
+
+
+  private escapeHtml(
+    value: string,
+  ): string {
+
+    return value
+      .replace(
+        /&/g,
+        '&amp;',
+      )
+      .replace(
+        /</g,
+        '&lt;',
+      )
+      .replace(
+        />/g,
+        '&gt;',
+      )
+      .replace(
+        /"/g,
+        '&quot;',
+      )
+      .replace(
+        /'/g,
+        '&#039;',
+      );
   }
 
 

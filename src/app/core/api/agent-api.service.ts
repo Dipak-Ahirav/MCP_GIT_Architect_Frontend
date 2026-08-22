@@ -233,7 +233,11 @@ export class AgentApiService {
 
     return this.http
       .post<
-        ApiResponse<CiDebugAnalysis>
+        ApiResponse<{
+          repository: string;
+          runId: number;
+          analysis: CiDebugAnalysis;
+        }>
       >(
         `${this.baseUrl}/sessions/${sessionId}/actions/runs/${runId}/debug`,
         {},
@@ -241,7 +245,7 @@ export class AgentApiService {
       .pipe(
         map(
           response =>
-            response.data,
+            response.data.analysis,
         ),
       );
   }
