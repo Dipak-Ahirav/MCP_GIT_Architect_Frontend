@@ -24,6 +24,10 @@ import type {
   CiDebugAnalysis,
 } from '../../core/models/analysis.model';
 
+import type {
+  GitHubApprovalRequired,
+} from '../../core/models/approval.model';
+
 import {
   getApiError,
 } from '../../core/utils/api-error';
@@ -72,6 +76,7 @@ import {
           class="btn btn-primary"
           [disabled]="
             loading() ||
+            autoFixLoading() ||
             !runId ||
             !session.hasRepository()
           "
@@ -81,6 +86,24 @@ import {
             loading()
               ? 'Investigating...'
               : 'Debug Run'
+          }}
+
+        </button>
+
+        <button
+          class="btn btn-secondary"
+          [disabled]="
+            loading() ||
+            autoFixLoading() ||
+            !runId ||
+            !session.hasRepository()
+          "
+          (click)="prepareAutoFix()">
+
+          {{
+            autoFixLoading()
+              ? 'Preparing fix...'
+              : 'Prepare CI Auto Fix'
           }}
 
         </button>
@@ -608,6 +631,101 @@ import {
       </details>
 
     }
+
+
+    @if (
+      approval();
+      as pending
+    ) {
+
+      <div class="approval-panel">
+
+        <span class="badge badge-warning">
+          APPROVAL REQUIRED
+        </span>
+
+        <h2>
+          Review CI auto-fix action
+        </h2>
+
+        <p>
+          Repository:
+          <strong>
+            {{ pending.repository }}
+          </strong>
+        </p>
+
+        @for (
+          action
+          of pending.actions;
+          track action.actionIndex
+        ) {
+
+          <div class="action-card">
+
+            <strong>
+              Tool:
+              {{ action.tool }}
+            </strong>
+
+            <pre>{{ action.arguments | json }}</pre>
+
+            <div class="approval-actions">
+
+              <button
+                class="btn btn-success"
+                [disabled]="resolving()"
+                (click)="
+                  decide(
+                    'approve',
+                    action.actionIndex
+                  )
+                ">
+
+                Approve
+
+              </button>
+
+              <button
+                class="btn btn-danger"
+                [disabled]="resolving()"
+                (click)="
+                  decide(
+                    'reject',
+                    action.actionIndex
+                  )
+                ">
+
+                Reject
+
+              </button>
+
+            </div>
+
+          </div>
+
+        }
+
+      </div>
+
+    }
+
+
+    @if (autoFixMessage()) {
+
+      <div class="panel">
+
+        <span class="badge badge-success">
+          CI Auto Fix
+        </span>
+
+        <p>
+          {{ autoFixMessage() }}
+        </p>
+
+      </div>
+
+    }
   `,
 
   styles: [`
@@ -664,6 +782,43 @@ import {
       color: #64748b;
     }
 
+    .approval-panel {
+      margin-top: 24px;
+
+      padding: 22px;
+
+      border:
+        2px solid #f59e0b;
+
+      background: #fffbeb;
+
+      border-radius: 14px;
+    }
+
+    .approval-panel h2 {
+      margin:
+        10px 0;
+    }
+
+    .action-card {
+      margin-top: 16px;
+
+      padding: 16px;
+
+      background: white;
+
+      border:
+        1px solid #fde68a;
+
+      border-radius: 10px;
+    }
+
+    .approval-actions {
+      display: flex;
+
+      gap: 10px;
+    }
+
     pre {
       overflow: auto;
 
@@ -705,6 +860,23 @@ export class CiDebuggerComponent {
   protected readonly loading =
     signal(false);
 
+  protected readonly autoFixLoading =
+    signal(false);
+
+  protected readonly resolving =
+    signal(false);
+
+  protected readonly approval =
+    signal<
+      GitHubApprovalRequired |
+      null
+    >(null);
+
+  protected readonly autoFixMessage =
+    signal<string | null>(
+      null,
+    );
+
   protected readonly error =
     signal<string | null>(
       null,
@@ -728,6 +900,10 @@ export class CiDebuggerComponent {
     this.loading.set(true);
 
     this.error.set(null);
+
+    this.autoFixMessage.set(null);
+
+    this.approval.set(null);
 
 
     this.api
@@ -759,6 +935,177 @@ export class CiDebuggerComponent {
             );
 
             this.loading.set(false);
+          },
+      });
+  }
+
+
+  protected prepareAutoFix():
+    void {
+
+    const sessionId =
+      this.session.sessionId();
+
+    if (
+      !sessionId ||
+      !this.runId
+    ) {
+      return;
+    }
+
+    this.autoFixLoading.set(true);
+
+    this.error.set(null);
+
+    this.autoFixMessage.set(null);
+
+    this.approval.set(null);
+
+    this.api
+      .prepareCiAutoFix(
+        sessionId,
+        Number(
+          this.runId,
+        ),
+        this.report() ?? undefined,
+      )
+      .subscribe({
+
+        next:
+          result => {
+
+            this.autoFixLoading.set(false);
+
+            if (
+              result.analysis
+            ) {
+              this.report.set(
+                result.analysis,
+              );
+            }
+
+            if (
+              result.status ===
+              'approval_required'
+            ) {
+              this.approval.set(
+                result,
+              );
+
+              return;
+            }
+
+            this.autoFixMessage.set(
+              result.response,
+            );
+          },
+
+        error:
+          error => {
+
+            this.error.set(
+              getApiError(
+                error,
+              ),
+            );
+
+            this.autoFixLoading.set(false);
+          },
+      });
+  }
+
+
+  protected decide(
+    decision:
+      'approve' |
+      'reject',
+
+    actionIndex:
+      number,
+  ): void {
+
+    const pending =
+      this.approval();
+
+    if (!pending) {
+      return;
+    }
+
+    if (!pending.approvalId) {
+      this.error.set(
+        'Approval id is missing. Prepare the CI auto fix again.',
+      );
+
+      return;
+    }
+
+    this.resolving.set(true);
+
+    this.error.set(null);
+
+    this.api
+      .decideApproval(
+        pending.approvalId,
+        decision,
+        actionIndex,
+      )
+      .subscribe({
+
+        next:
+          result => {
+
+            this.resolving.set(
+              false,
+            );
+
+            if (
+              result.status ===
+              'approval_required'
+            ) {
+              this.approval.set({
+                status:
+                  'approval_required',
+
+                approvalId:
+                  result.approvalId ??
+                  pending.approvalId,
+
+                repository:
+                  pending.repository,
+
+                actions:
+                  result.actions ?? [],
+              });
+
+              return;
+            }
+
+            this.approval.set(
+              null,
+            );
+
+            this.autoFixMessage.set(
+              result.response ??
+              (
+                decision === 'approve'
+                  ? 'CI auto fix completed.'
+                  : 'CI auto fix rejected.'
+              ),
+            );
+          },
+
+        error:
+          error => {
+
+            this.error.set(
+              getApiError(
+                error,
+              ),
+            );
+
+            this.resolving.set(
+              false,
+            );
           },
       });
   }

@@ -251,6 +251,71 @@ export class AgentApiService {
   }
 
 
+  prepareCiAutoFix(
+    sessionId: string,
+    runId: number,
+    analysis?: CiDebugAnalysis,
+  ): Observable<
+    (
+      GitHubApprovalRequired |
+      GitHubWriteCompleted
+    ) & {
+      runId?: number;
+
+      analysis?: CiDebugAnalysis;
+    }
+  > {
+
+    return this.http
+      .post<
+        ApiResponse<
+          (
+            GitHubApprovalRequired |
+            GitHubWriteCompleted
+          ) & {
+            runId?: number;
+
+            analysis?: CiDebugAnalysis;
+          }
+        >
+      >(
+        `${this.baseUrl}/sessions/${sessionId}/actions/runs/${runId}/auto-fix`,
+        {
+          analysis,
+        },
+      )
+      .pipe(
+        map(
+          response => {
+            const data =
+              response.data;
+
+            if (
+              data.status !==
+              'approval_required'
+            ) {
+              return data;
+            }
+
+            const raw =
+              data as GitHubApprovalRequired & {
+                _id?: string;
+              };
+
+            return {
+              ...raw,
+
+              approvalId:
+                raw.approvalId ??
+                raw._id ??
+                '',
+            };
+          },
+        ),
+      );
+  }
+
+
   requestGitHubWrite(
     sessionId: string,
     instruction: string,
